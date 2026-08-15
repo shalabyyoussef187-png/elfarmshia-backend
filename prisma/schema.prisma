@@ -1,0 +1,113 @@
+datasource db {
+  provider  = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Admin {
+  id        String      @id @default(uuid())
+  email     String      @unique
+  password  String
+  analytics Analytics[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Product {
+  id                   String   @id @default(uuid())
+  name                 String
+  category             String?
+  brand                String?
+  price                Float?
+  productUrl           String?
+  priceStatus          String?
+  notes                String?
+  isOffer              Boolean  @default(false)
+  offerDiscountPercent Float?
+  offerDiscountAmount  Float?
+  isBestSeller         Boolean  @default(false)
+  imageUrl             String?  @default("")
+  imageFileId          String?  @default("")
+  imageThumbnailUrl    String?  @default("")
+  isAvailable          Boolean  @default(true)
+  quantity             Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  orders Order[]
+}
+
+model Order {
+  id           String   @id @default(uuid())
+  customerName String
+  productName  String?
+  phone        String
+  addressText  String
+  lat          Float?
+  lng          Float?
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+  quantity     Int      @default(1)
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Analytics {
+  id           String   @id @default(uuid())
+  event        String
+  actionType   String?
+  path         String?
+  resourceId   String?
+  resourceType String?
+  method       String?
+  status       Int?
+  responseTime Int?
+  userId       String?
+  user         Admin?   @relation(fields: [userId], references: [id])
+  sessionId    String?
+  ip           String?
+  userAgent    String?
+  referer      String?
+  properties   Json?    @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([event, actionType])
+  @@index([event, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@index([sessionId, createdAt(sort: Desc)])
+}
+
+model Brand {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Message {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
