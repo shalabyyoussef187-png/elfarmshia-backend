@@ -157,6 +157,9 @@ router.get('/:id', getProductById);
  *               name:
  *                 type: string
  *                 description: اسم المنتج
+ *               description:
+ *                 type: string
+ *                 description: وصف المنتج (اختياري)
  *               price:
  *                 type: number
  *                 description: سعر المنتج
@@ -217,6 +220,9 @@ router.post('/', requireAdminAuth, upload.single('image'), createProduct);
  *               name:
  *                 type: string
  *                 description: اسم المنتج
+ *               description:
+ *                 type: string
+ *                 description: وصف المنتج (اختياري)
  *               price:
  *                 type: number
  *                 description: سعر المنتج

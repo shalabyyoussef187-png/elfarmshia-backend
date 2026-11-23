@@ -32,6 +32,7 @@ model Product {
   productUrl           String?
   priceStatus          String?
   notes                String?
+  description          String?
   isOffer              Boolean  @default(false)
   offerDiscountPercent Float?
   offerDiscountAmount  Float?
