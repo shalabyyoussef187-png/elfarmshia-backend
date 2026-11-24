@@ -13,18 +13,23 @@ const {
   publishProduct,
 } = require('../controllers/productController');
 
-// ✅ Multer — بيخزن الصورة في الـ memory مباشرة (مش على الديسك)
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('ملفات صور فقط!'), false);
-    }
-  },
-});
+// ✅ Multer — بيخزن الصور في الـ memory مباشرة
+const storage = multer.memoryStorage();
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('ملفات صور فقط!'), false);
+  }
+};
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter });
+
+// ✅ حقول الصور: image, image2, image3 (كل واحدة max 1 ملف)
+const uploadFields = upload.fields([
+  { name: 'image',  maxCount: 1 },
+  { name: 'image2', maxCount: 1 },
+  { name: 'image3', maxCount: 1 },
+]);
 
 /**
  * @swagger
@@ -61,19 +66,11 @@ const upload = multer({
  *         schema:
  *           type: integer
  *       - in: query
- *         name: offer
- *         description: فلتر منتجات عليها عرض (نفس onOffer)
- *         schema:
- *           type: string
- *           enum: ['true', '1']
- *       - in: query
  *         name: onOffer
- *         description: true = المنتجات التي isOffer=true
  *         schema:
  *           type: string
  *       - in: query
  *         name: bestSeller
- *         description: true = الأكثر مبيعاً فقط (isBestSeller=true). يمكن استخدام bestseller أو isBestSeller
  *         schema:
  *           type: string
  *     responses:
@@ -102,7 +99,7 @@ router.get('/warehouse', requireAdminAuth, getWarehouseProducts);
  * @swagger
  * /api/products/{id}/publish:
  *   patch:
- *     summary: نشر منتج من المخزن ليكون متاحاً للبيع (زر النشر)
+ *     summary: نشر منتج من المخزن ليكون متاحاً للبيع
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -142,8 +139,10 @@ router.get('/:id', getProductById);
  * @swagger
  * /api/products:
  *   post:
- *     summary: إضافة منتج جديد (مع صورة اختياري)
+ *     summary: إضافة منتج جديد
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -157,12 +156,24 @@ router.get('/:id', getProductById);
  *               name:
  *                 type: string
  *                 description: اسم المنتج
- *               description:
- *                 type: string
- *                 description: وصف المنتج (اختياري)
  *               price:
  *                 type: number
  *                 description: سعر المنتج
+ *               description:
+ *                 type: string
+ *                 description: وصف المنتج (اختياري)
+ *               features:
+ *                 type: string
+ *                 description: مميزات المنتج (اختياري)
+ *               usageInstructions:
+ *                 type: string
+ *                 description: طريقة الاستخدام (اختياري)
+ *               warnings:
+ *                 type: string
+ *                 description: التحذيرات (اختياري)
+ *               productInfo:
+ *                 type: string
+ *                 description: معلومات المنتج (اختياري)
  *               category:
  *                 type: string
  *                 description: ID الفئة
@@ -177,7 +188,7 @@ router.get('/:id', getProductById);
  *                 description: نسبة الخصم 0–100
  *               offerDiscountAmount:
  *                 type: number
- *                 description: مبلغ خصم ثابت من السعر (استخدم إما النسبة أو المبلغ)
+ *                 description: مبلغ خصم ثابت
  *               isBestSeller:
  *                 type: boolean
  *                 description: يظهر في الأكثر مبيعاً
@@ -190,21 +201,31 @@ router.get('/:id', getProductById);
  *               image:
  *                 type: string
  *                 format: binary
- *                 description: صورة المنتج (JPG/PNG — حد أقصى 5MB)
+ *                 description: الصورة الرئيسية (اختياري — JPG/PNG — حد أقصى 5MB)
+ *               image2:
+ *                 type: string
+ *                 format: binary
+ *                 description: الصورة الثانية (اختياري)
+ *               image3:
+ *                 type: string
+ *                 format: binary
+ *                 description: الصورة الثالثة (اختياري)
  *     responses:
  *       201:
  *         description: تم إضافة المنتج بنجاح
  *       400:
  *         description: بيانات غلط
  */
-router.post('/', requireAdminAuth, upload.single('image'), createProduct);
+router.post('/', requireAdminAuth, uploadFields, createProduct);
 
 /**
  * @swagger
  * /api/products/{id}:
  *   put:
- *     summary: تعديل منتج (مع صورة اختياري)
+ *     summary: تعديل منتج
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -219,19 +240,27 @@ router.post('/', requireAdminAuth, upload.single('image'), createProduct);
  *             properties:
  *               name:
  *                 type: string
- *                 description: اسم المنتج
+ *               price:
+ *                 type: number
  *               description:
  *                 type: string
  *                 description: وصف المنتج (اختياري)
- *               price:
- *                 type: number
- *                 description: سعر المنتج
+ *               features:
+ *                 type: string
+ *                 description: مميزات المنتج (اختياري)
+ *               usageInstructions:
+ *                 type: string
+ *                 description: طريقة الاستخدام (اختياري)
+ *               warnings:
+ *                 type: string
+ *                 description: التحذيرات (اختياري)
+ *               productInfo:
+ *                 type: string
+ *                 description: معلومات المنتج (اختياري)
  *               category:
  *                 type: string
- *                 description: ID الفئة
  *               brand:
  *                 type: string
- *                 description: ID الماركة
  *               isOffer:
  *                 type: boolean
  *               offerDiscountPercent:
@@ -244,25 +273,34 @@ router.post('/', requireAdminAuth, upload.single('image'), createProduct);
  *                 type: boolean
  *               quantity:
  *                 type: integer
- *                 description: الكمية
  *               image:
  *                 type: string
  *                 format: binary
- *                 description: صورة المنتج الجديدة (اختياري)
+ *                 description: الصورة الرئيسية الجديدة (اختياري)
+ *               image2:
+ *                 type: string
+ *                 format: binary
+ *                 description: الصورة الثانية الجديدة (اختياري)
+ *               image3:
+ *                 type: string
+ *                 format: binary
+ *                 description: الصورة الثالثة الجديدة (اختياري)
  *     responses:
  *       200:
  *         description: تم التعديل بنجاح
  *       404:
  *         description: المنتج مش موجود
  */
-router.put('/:id', requireAdminAuth, upload.single('image'), updateProduct);
+router.put('/:id', requireAdminAuth, uploadFields, updateProduct);
 
 /**
  * @swagger
  * /api/products/{id}:
  *   delete:
- *     summary: حذف منتج (وصورته من ImageKit)
+ *     summary: حذف منتج (وكل صوره من ImageKit)
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -281,14 +319,23 @@ router.delete('/:id', requireAdminAuth, deleteProduct);
  * @swagger
  * /api/products/{id}/image:
  *   delete:
- *     summary: حذف صورة المنتج بس من غير حذف المنتج
+ *     summary: حذف صورة معينة من المنتج (من غير حذف المنتج)
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: slot
+ *         schema:
+ *           type: string
+ *           enum: ['1', '2', '3']
+ *           default: '1'
+ *         description: رقم الصورة اللي هتتحذف (1 أو 2 أو 3)
  *     responses:
  *       200:
  *         description: تم حذف الصورة بنجاح

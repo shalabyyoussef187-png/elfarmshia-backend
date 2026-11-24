@@ -33,6 +33,10 @@ model Product {
   priceStatus          String?
   notes                String?
   description          String?
+  features             String?
+  usageInstructions    String?
+  warnings             String?
+  productInfo          String?
   isOffer              Boolean  @default(false)
   offerDiscountPercent Float?
   offerDiscountAmount  Float?
@@ -40,6 +44,12 @@ model Product {
   imageUrl             String?  @default("")
   imageFileId          String?  @default("")
   imageThumbnailUrl    String?  @default("")
+  imageUrl2            String?  @default("")
+  imageFileId2         String?  @default("")
+  imageThumbnailUrl2   String?  @default("")
+  imageUrl3            String?  @default("")
+  imageFileId3         String?  @default("")
+  imageThumbnailUrl3   String?  @default("")
   isAvailable          Boolean  @default(true)
   quantity             Int      @default(0)
   createdAt            DateTime @default(now())
